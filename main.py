@@ -8,6 +8,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 #AgentExecutor is a way to execut the agent
 from langchain.agents import create_tool_calling_agent, AgentExecutor
+#to use our tool we must import it
+from tools import search_tool, wiki_tool, save_tool
 
 # loads environment variable file (.env)
 load_dotenv()
@@ -42,19 +44,24 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 ).partial(format_instructions=parser.get_format_instructions())
 
+
+tools =[search_tool, wiki_tool, save_tool]
 #create agent
 agent = create_tool_calling_agent(
     llm=llm,
     prompt=prompt,
-    tools=[]
+    tools=tools
 )
  
 #create agent executor
-agent_executor = AgentExecutor(agent=agent, tools=[], verbose=True)
-raw_response = agent_executor.invoke({"query":"What is the capital of France?"})
-print(raw_response) 
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+#query is a user input
+query = input("What can I help you research?")
+raw_response = agent_executor.invoke({"query": query})
+
 
 try :
     structured_response = parser.parse(raw_response.get("output")[0]["text"])
+    print(structured_response) 
 except Exception as e :
     print("Error parsing response", e, "Raw Response - ", raw_response)
